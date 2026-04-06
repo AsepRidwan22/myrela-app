@@ -82,14 +82,25 @@ jobs:
     steps:
       - name: Validate deploy secrets
         env:
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USERNAME: ${{ secrets.DEPLOY_USERNAME }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USERNAME" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
-            echo "Missing deploy secrets. Required: DEPLOY_HOST, DEPLOY_USERNAME, DEPLOY_SSH_KEY"
+          if [ -z "$TS_AUTHKEY" ] || [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USERNAME" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "Missing deploy secrets. Required: TS_AUTHKEY, DEPLOY_HOST, DEPLOY_USERNAME, DEPLOY_SSH_KEY"
             exit 1
           fi
+
+      - name: Connect runner to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
+      - name: Verify Tailscale reachability
+        run: |
+          tailscale status
+          ping -c 2 "${{ secrets.DEPLOY_HOST }}"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
