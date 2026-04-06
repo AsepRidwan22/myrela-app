@@ -140,6 +140,14 @@ jobs:
 
           cd "$DEPLOY_PATH"
           git pull origin main
+          APP_PATH="$DEPLOY_PATH/source"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Laravel app path not found: $APP_PATH"
+            ls -la "$DEPLOY_PATH" || true
+            exit 1
+          fi
+
+          cd "$APP_PATH"
           composer install --no-dev --optimize-autoloader --no-interaction
           php artisan migrate --force
           npm ci
