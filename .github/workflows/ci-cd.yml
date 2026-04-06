@@ -100,7 +100,13 @@ jobs:
       - name: Verify Tailscale reachability
         run: |
           tailscale status
-          ping -c 2 "${{ secrets.DEPLOY_HOST }}"
+          HOST="${{ secrets.DEPLOY_HOST }}"
+          PORT="${{ secrets.DEPLOY_PORT || 22 }}"
+          tailscale ping -c 2 "$HOST" || true
+          timeout 7 bash -c "cat < /dev/null > /dev/tcp/$HOST/$PORT" || {
+            echo "Cannot reach $HOST on TCP port $PORT over Tailscale"
+            exit 1
+          }
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
