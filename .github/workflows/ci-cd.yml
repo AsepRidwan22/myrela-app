@@ -129,8 +129,11 @@ jobs:
 
           ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" <<'EOF'
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'EOF'
           set -e
+          if [ -z "$DEPLOY_PATH" ]; then
+            DEPLOY_PATH="/var/www/rela-app/myrela-app"
+          fi
           if [ ! -d "$DEPLOY_PATH" ]; then
             echo "Deploy path not found: $DEPLOY_PATH"
             echo "Available folders under /var/www/rela-app:"
