@@ -170,6 +170,10 @@ jobs:
           docker compose down --remove-orphans
           docker compose up -d
 
+          docker compose exec -T app mkdir -p /var/www/storage/framework/{views,cache,testing} /var/www/bootstrap/cache
+          docker compose exec -T app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+          docker compose exec -T app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
           docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
           docker compose exec -T app php artisan migrate --force
           docker compose exec -T app npm ci
