@@ -129,7 +129,7 @@ jobs:
 
           ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" <<EOF
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" <<'EOF'
           set -e
           if [ ! -d "$DEPLOY_PATH" ]; then
             echo "Deploy path not found: $DEPLOY_PATH"
