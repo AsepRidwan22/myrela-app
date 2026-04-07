@@ -115,11 +115,17 @@ jobs:
           DEPLOY_USERNAME: ${{ secrets.DEPLOY_USERNAME }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
         run: |
           set -euo pipefail
 
           if [ -z "$DEPLOY_PATH" ]; then
             DEPLOY_PATH="/var/www/rela-app/myrela-app"
+          fi
+
+          ENV_B64=""
+          if [ -n "${DEPLOY_ENV_FILE:-}" ]; then
+            ENV_B64="$(printf '%s' "$DEPLOY_ENV_FILE" | base64 -w0)"
           fi
 
           mkdir -p ~/.ssh
@@ -129,7 +135,7 @@ jobs:
 
           ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'EOF'
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_USERNAME@$DEPLOY_HOST" "DEPLOY_PATH='$DEPLOY_PATH' ENV_B64='$ENV_B64' bash -s" <<'EOF'
           set -e
           if [ -z "$DEPLOY_PATH" ]; then
             DEPLOY_PATH="/var/www/rela-app/myrela-app"
@@ -150,7 +156,18 @@ jobs:
             exit 1
           fi
 
+          if [ -n "${ENV_B64:-}" ]; then
+            printf '%s' "$ENV_B64" | base64 -d > "$DEPLOY_PATH/source/.env"
+          fi
+
+          if [ ! -f "$DEPLOY_PATH/source/.env" ]; then
+            echo ".env not found at $DEPLOY_PATH/source/.env"
+            echo "Provide DEPLOY_ENV_FILE secret or create .env on the server."
+            exit 1
+          fi
+
           docker compose build app
+          docker compose down --remove-orphans
           docker compose up -d
 
           docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
