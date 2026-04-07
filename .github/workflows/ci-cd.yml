@@ -143,17 +143,19 @@ jobs:
 
           cd "$DEPLOY_PATH"
           git pull origin main
-          APP_PATH="$DEPLOY_PATH/source"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "Laravel app path not found: $APP_PATH"
+
+          if [ ! -f "docker-compose.yml" ]; then
+            echo "docker-compose.yml not found in $DEPLOY_PATH"
             ls -la "$DEPLOY_PATH" || true
             exit 1
           fi
 
-          cd "$APP_PATH"
-          composer install --no-dev --optimize-autoloader --no-interaction
-          php artisan migrate --force
-          npm ci
-          npm run build
-          php artisan optimize:clear
+          docker compose build app
+          docker compose up -d
+
+          docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
+          docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app npm ci
+          docker compose exec -T app npm run build
+          docker compose exec -T app php artisan optimize:clear
           EOF
